@@ -1,52 +1,52 @@
 #include "FloppaServer.h"
+#include <QNetworkDatagram>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 FloppaServer::FloppaServer(QObject* parent) : QObject(parent){
-    m_webSocketServer = new QWebSocketServer("Floppa Server", QWebSocketServer::NonSecureMode, this);
 
+    connect(&m_reveiver, &QUdpSocket::readyRead, this, &FloppaServer::readPendingDatagrams);
+
+    m_reveiver.bind(m_address, m_port);
+    m_sender.bind(m_address, 53739);
+
+    qDebug() << "Server running on" << m_address << ":" << m_port;
 }
 
 FloppaServer::~FloppaServer(){
-    m_webSocketServer->close();
-    qDeleteAll(m_clients.begin(), m_clients.end());
-
-    if (m_webSocketServer->listen(QHostAddress::Any, port)) {
-            qDebug() << "Echoserver listening on port" << port;
-            connect(m_webSocketServer, &QWebSocketServer::newConnection,
-                    this, &FloppaServer::onNewConnection);
-            connect(m_webSocketServer, &QWebSocketServer::closed, this, &FloppaServer::closed);
-        }
+    m_reveiver.close();
+    m_sender.close();
 }
 
-void FloppaServer::onNewConnection(){
+void FloppaServer::readPendingDatagrams()
+{
+    qDebug() << "Message received";
+    while (m_reveiver.hasPendingDatagrams()) {
+            QNetworkDatagram datagram = m_reveiver.receiveDatagram();
 
-    QWebSocket *socket = m_webSocketServer->nextPendingConnection();
+            QHostAddress address = datagram.senderAddress();
+            if(!m_clients.contains(address)){
+                qDebug() << "New client: " << datagram.senderAddress() << ":" << datagram.senderPort();
+                m_clients << address;
+            }
 
-    connect(socket, &QWebSocket::textMessageReceived, this, &FloppaServer::processTextMessage);
-    connect(socket, &QWebSocket::binaryMessageReceived, this, &FloppaServer::processBinaryMessage);
-    connect(socket, &QWebSocket::disconnected, this, &FloppaServer::socketDisconnected);
-
-    m_clients << socket;
-}
-
-void FloppaServer::processTextMessage(QString message){
-    QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
-    qDebug() << "Message received:" << message;
-    if (pClient) {
-        pClient->sendTextMessage(message);
+            processData(datagram);
     }
 }
-void FloppaServer::processBinaryMessage(QByteArray message){
-    QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
-    qDebug() << "Binary Message received:" << message;
-    if (pClient) {
-        pClient->sendBinaryMessage(message);
-    }
+
+void FloppaServer::processData(QNetworkDatagram datagram){
+    qDebug() << datagram.data();
+
+
+    QJsonObject data_object;
+    data_object["action_type"] = 2;
+    QJsonDocument doc(data_object);
+    qDebug() << "sending to: " << datagram.senderAddress() << ":" << datagram.senderPort();
+    m_sender.writeDatagram(doc.toJson(), datagram.senderAddress(), datagram.senderPort());
 }
-void FloppaServer::socketDisconnected(){
-    QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
-    qDebug() << "socketDisconnected:" << pClient;
-    if (pClient) {
-        m_clients.removeAll(pClient);
-        pClient->deleteLater();
-    }
+
+void FloppaServer::onNewConnection(){}
+
+void FloppaServer::clientDisconnected(){
+    qDebug() << "socketDisconnected";
 }
