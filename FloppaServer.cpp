@@ -8,15 +8,11 @@ FloppaServer::FloppaServer(QObject* parent) : QObject(parent){
     connect(&m_socket, &QUdpSocket::readyRead, this, &FloppaServer::readPendingDatagrams);
 
     m_socket.bind(m_address, m_port);
-    //m_sender.bind(m_address, 53739);
 
     qDebug() << "Server running on" << m_address << ":" << m_port;
 }
 
-FloppaServer::~FloppaServer(){
-    m_socket.close();
-    m_sender.close();
-}
+FloppaServer::~FloppaServer(){}
 
 void FloppaServer::readPendingDatagrams()
 {
@@ -41,12 +37,8 @@ void FloppaServer::processData(QNetworkDatagram datagram){
     QJsonObject data_object;
     data_object["action_type"] = 2;
     QJsonDocument doc(data_object);
-    qDebug() << "sending to:" << datagram.senderAddress() << ":" << datagram.senderPort();
-    m_socket.writeDatagram(doc.toJson(), datagram.senderAddress(), datagram.senderPort());
-}
-
-void FloppaServer::onNewConnection(){}
-
-void FloppaServer::clientDisconnected(){
-    qDebug() << "socketDisconnected";
+    for(const QHostAddress& address : m_clients){
+        qDebug() << "sending to:" << address << ":" << 60420;
+        m_socket.writeDatagram(doc.toJson(), address, 60420);
+    }
 }
