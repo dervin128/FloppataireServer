@@ -24,7 +24,7 @@ private slots:
 private:
     void processData(QNetworkDatagram datagram);
 
-    const QHostAddress m_address = QHostAddress::LocalHost;
+    const QHostAddress m_address = QHostAddress("192.168.1.104");
     const quint16 m_port = 60420;
     QUdpSocket m_sender;
     QUdpSocket m_reveiver;
