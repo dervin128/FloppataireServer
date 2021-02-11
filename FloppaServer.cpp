@@ -2,6 +2,7 @@
 #include <QNetworkDatagram>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QJsonArray>
 
 FloppaServer::FloppaServer(QObject* parent) :
     QObject(parent),
@@ -31,13 +32,44 @@ void FloppaServer::onNewConnection(){
 }
 
 void FloppaServer::onReadyRead(){
+    QTcpSocket* sender = static_cast<QTcpSocket*>(QObject::sender());
 
+    QJsonDocument document = QJsonDocument::fromJson(sender->readAll());
+    QJsonObject data = document.object();
+
+     qDebug() << data;
+
+    if(data["action_context"] == 0 && data["command"] == 0){
+        qDebug() << sender->localAddress() << "is requesting lobbies";
+        sendLobbyInfo(sender);
+    }
+}
+
+void FloppaServer::sendLobbyInfo(QTcpSocket* client){
+    QJsonObject data_object;
+    data_object["action_context"] = 0;
+    data_object["command"] = 0;
+
+    QJsonObject room0;
+    room0["id"] = 0;
+    room0["name"] = "schwing schwong";
+    room0["player_count"] = 2;
+    QJsonObject room1;
+    room1["id"] = 23;
+    room1["name"] = "Borkiboi";
+    room1["player_count"] = 1;
+    QJsonArray rooms = {room0, room1};
+
+    data_object.insert("rooms", rooms);
+    QByteArray data = QJsonDocument(data_object).toJson();
+    client->write(data);
 }
 
 void FloppaServer::onSocketStateChanged(QAbstractSocket::SocketState socketState){
     if (socketState == QAbstractSocket::UnconnectedState) {
         QTcpSocket* sender = static_cast<QTcpSocket*>(QObject::sender());
         m_clients.removeOne(sender);
+        qDebug() << "Connection lost:" << sender->localAddress() << sender->localPort();
     }
 }
 

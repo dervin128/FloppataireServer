@@ -27,6 +27,8 @@ private slots:
 private:
     void processData(QNetworkDatagram datagram);
 
+    void sendLobbyInfo(QTcpSocket* client);
+
     QTcpServer* const m_tcpServer;
     QUdpSocket* const m_UdpSocket;
     const QHostAddress m_address = QHostAddress("192.168.1.104");
