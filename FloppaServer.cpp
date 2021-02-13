@@ -4,13 +4,11 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 
-FloppaServer::FloppaServer(QObject* parent) :
+FloppaServer::FloppaServer(LobbyController* lobbyController, QObject* parent) :
     QObject(parent),
-    m_tcpServer(new QTcpServer()),
-    m_UdpSocket(new QUdpSocket()){
+    m_lobbyController(lobbyController),
+    m_tcpServer(new QTcpServer()){
 
-    //connect(&m_socket, &QUdpSocket::readyRead, this, &FloppaServer::readPendingDatagrams);
-    //m_socket.bind(m_address, m_port);
     m_tcpServer->listen(m_address, m_port);
 
     connect(m_tcpServer, &QTcpServer::newConnection, this, &FloppaServer::onNewConnection);
@@ -20,6 +18,10 @@ FloppaServer::FloppaServer(QObject* parent) :
 
 FloppaServer::~FloppaServer(){
     m_tcpServer->disconnect();
+}
+
+ServerData::ServerContext FloppaServer::serverContext(const QJsonObject obj) const{
+    return static_cast<ServerData::ServerContext>(obj["context"].toInt());
 }
 
 void FloppaServer::onNewConnection(){
@@ -32,37 +34,21 @@ void FloppaServer::onNewConnection(){
 }
 
 void FloppaServer::onReadyRead(){
-    QTcpSocket* sender = static_cast<QTcpSocket*>(QObject::sender());
+    QTcpSocket* client = static_cast<QTcpSocket*>(QObject::sender());
 
-    QJsonDocument document = QJsonDocument::fromJson(sender->readAll());
-    QJsonObject data = document.object();
+    QJsonDocument document = QJsonDocument::fromJson(client->readAll());
+    const QJsonObject data = document.object();
 
-     qDebug() << data;
 
-    if(data["action_context"] == 0 && data["command"] == 0){
-        qDebug() << sender->localAddress() << "is requesting lobbies";
-        sendLobbyInfo(sender);
-    }
-}
-
-void FloppaServer::sendLobbyInfo(QTcpSocket* client){
-    QJsonObject data_object;
-    data_object["action_context"] = 0;
-    data_object["command"] = 0;
-
-    QJsonObject room0;
-    room0["id"] = 0;
-    room0["name"] = "schwing schwong";
-    room0["player_count"] = 2;
-    QJsonObject room1;
-    room1["id"] = 23;
-    room1["name"] = "Borkiboi";
-    room1["player_count"] = 1;
-    QJsonArray rooms = {room0, room1};
-
-    data_object.insert("rooms", rooms);
-    QByteArray data = QJsonDocument(data_object).toJson();
-    client->write(data);
+     ServerData::ServerContext context = serverContext(data);
+     switch(context){
+     case ServerData::LOBBY:
+         handleLobbyContext(client, data);
+         return;
+     default:
+         qDebug() << "Unhandled context";
+         return;
+     }
 }
 
 void FloppaServer::onSocketStateChanged(QAbstractSocket::SocketState socketState){
@@ -73,35 +59,64 @@ void FloppaServer::onSocketStateChanged(QAbstractSocket::SocketState socketState
     }
 }
 
-void FloppaServer::readPendingDatagrams()
-{
-    qDebug() << "Message received";
-    while (m_UdpSocket->hasPendingDatagrams()) {
-            QNetworkDatagram datagram = m_UdpSocket->receiveDatagram();
-
-            QHostAddress address = datagram.senderAddress();
-                /*
-            if(!m_clients.contains(address)){
-                qDebug() << "New client: " << datagram.senderAddress() << ":" << datagram.senderPort();
-                m_clients << address;
-            }
-                */
-
-            processData(datagram);
+void FloppaServer::handleLobbyContext(QTcpSocket* client, const QJsonObject data){
+    auto request = m_lobbyController->lobbyRequest(data);
+    switch(request){
+    case LobbyController::ROOMS_LIST:
+        handleRoomsList(client);
+        return;
+    case LobbyController::JOIN:
+        handleLobbyJoin(client, data);
+        return;
+    case LobbyController::LEAVE:
+        handleLobbyLeave(client, data);
+        return;
+    default:
+        qDebug() << "unhandled lobby request";
+        return;
     }
 }
 
-void FloppaServer::processData(QNetworkDatagram datagram){
-    qDebug() << datagram.data();
-
-
-    QJsonObject data_object;
-    data_object["action_type"] = 2;
-    QJsonDocument doc(data_object);
-    /*
-    for(const QHostAddress& address : m_clients){
-        qDebug() << "sending to:" << address << ":" << m_port;
-        m_UdpSocket->writeDatagram(doc.toJson(), address, m_port);
-    }
-    */
+void FloppaServer::handleRoomsList(QTcpSocket* client){
+    ServerData data_object;
+    data_object.setContext(ServerData::LOBBY);
+    data_object.setData(m_lobbyController->getRoomsData());
+    QByteArray data = data_object.toJson();
+    client->write(data);
 }
+
+void FloppaServer::handleLobbyJoin(QTcpSocket* client, const QJsonObject data){
+    ServerData data_object;
+    data_object.setContext(ServerData::LOBBY);
+
+    QJsonObject success;
+    uint roomId = data["room_id"].toInt();
+    uint playerId = data["player_id"].toInt();
+    success["success"] = m_lobbyController->addPlayerToRoom(roomId, playerId);
+
+    data_object.setData(success);
+    QByteArray out_data = data_object.toJson();
+    client->write(out_data);
+}
+void FloppaServer::handleLobbyLeave(QTcpSocket* client, const QJsonObject data){
+    ServerData data_object;
+    data_object.setContext(ServerData::LOBBY);
+
+    QJsonObject success;
+    uint roomId = data["room_id"].toInt();
+    uint playerId = data["player_id"].toInt();
+    success["success"] = m_lobbyController->removePlayerFromRoom(roomId, playerId);
+
+    data_object.setData(success);
+    QByteArray out_data = data_object.toJson();
+    client->write(out_data);
+}
+
+
+
+
+
+
+
+
+

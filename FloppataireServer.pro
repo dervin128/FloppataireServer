@@ -10,6 +10,11 @@ CONFIG -= app_bundle
 
 SOURCES += \
         FloppaServer.cpp \
+        LobbyController.cpp \
+        Player.cpp \
+        PlayerController.cpp \
+        Room.cpp \
+        ServerData.cpp \
         main.cpp
 
 # Default rules for deployment.
@@ -18,4 +23,10 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    FloppaServer.h
+    FloppaServer.h \
+    LobbyController.h \
+    Player.h \
+    PlayerController.h \
+    Room.h \
+    SerializableJson.h \
+    ServerData.h
