@@ -5,7 +5,8 @@
 class ServerData : public QJsonObject {
 public:
     enum ServerContext{
-        LOBBY = 0,
+        ERROR,
+        LOBBY,
         GAME,
         CONNECTION
     };

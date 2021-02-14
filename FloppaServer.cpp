@@ -59,13 +59,15 @@ void FloppaServer::onReadyRead(){
 }
 
 void FloppaServer::onSocketStateChanged(QAbstractSocket::SocketState socketState){
+    QTcpSocket* sender = static_cast<QTcpSocket*>(QObject::sender());
+    qDebug() << "State changed:" << sender->localAddress() << sender->localPort();
     if (socketState == QAbstractSocket::UnconnectedState) {
-        QTcpSocket* sender = static_cast<QTcpSocket*>(QObject::sender());
         delete m_clients[sender];
         m_clients.remove(sender);
 
         qDebug() << "Connection lost:" << sender->localAddress() << sender->localPort();
     }
+
 }
 
 void FloppaServer::handleLobbyContext(QTcpSocket* client, const QJsonObject data){
@@ -106,12 +108,14 @@ void FloppaServer::handleLobbyCreateRoom(QTcpSocket* client, const QJsonObject d
 
     Room* newRoom = m_lobbyController->createNewRoom(data["room_name"].toString(), m_clients[client]->getId());
 
-    QJsonObject success;
-    success["room"] = newRoom->toJson();
+    QJsonObject room;
+    room["room"] = newRoom == nullptr ? QJsonObject{} : newRoom->toJson();
+
+    qDebug() << "newRoom:" << room;
 
     ServerData data_object;
     data_object.setContext(ServerData::LOBBY);
-    data_object.setData(success);
+    data_object.setData(room);
     QByteArray out_data = data_object.toJson();
     client->write(out_data);
 }

@@ -19,7 +19,7 @@ LobbyController::LobbyData LobbyController::lobbyData(const QJsonObject obj) con
 
 Room* LobbyController::createNewRoom(const QString& roomName, uint hostId){
     const Player* player = m_playerController->getPlayer(hostId);
-    if(player == nullptr) return 0;
+    if(player == nullptr) return nullptr;
     Room* newRoom = new Room(m_idGenerator++, roomName);
     newRoom->addPlayer(player);
     m_rooms[newRoom->getId()] = newRoom;

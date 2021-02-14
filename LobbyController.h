@@ -9,6 +9,7 @@ class LobbyController : public QObject {
     Q_OBJECT
 public:
     enum LobbyRequest {
+        ERROR,
         ROOMS_LIST,
         JOIN,
         LEAVE,
