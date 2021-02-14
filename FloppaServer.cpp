@@ -81,7 +81,7 @@ void FloppaServer::handleLobbyContext(QTcpSocket* client, const QJsonObject data
         handleLobbyLeave(client, data);
         return;
     case LobbyController::CREATE_ROOM:
-        handleLobbyCreateRoom();
+        handleLobbyCreateRoom(client, data);
         return;
     default:
         qDebug() << "unhandled lobby request";
