@@ -18,6 +18,6 @@ public:
     void setData(const QJsonObject data);
 
 private:
-    QJsonValue operator[](const QString& key);
+    QJsonValueRef operator[](const QString& key);
 
 };

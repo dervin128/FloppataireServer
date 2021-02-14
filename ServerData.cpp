@@ -7,7 +7,7 @@ QByteArray ServerData::toJson() const{
     return QJsonDocument(*this).toJson();
 }
 
-QJsonValue ServerData::operator[](const QString& key){
+QJsonValueRef ServerData::operator[](const QString& key){
     return QJsonObject::operator[](key);
 }
 
