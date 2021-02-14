@@ -45,7 +45,7 @@ QJsonObject Room::toJson() const{
     json["id"] = (int) m_id;
     json["roomName"] = m_roomName;
     QJsonArray players;
-    for(const Player* player : m_players){
+    foreach(const Player* player, m_players){
         players.append(player->toJson());
     }
     return json;

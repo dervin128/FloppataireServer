@@ -12,7 +12,7 @@ class FloppaServer : public QObject {
     Q_OBJECT
 
 public:
-    FloppaServer(LobbyController* lobbyController, QObject* parent = nullptr);
+    FloppaServer(LobbyController* lobbyController, PlayerController* playerController, QObject* parent = nullptr);
     ~FloppaServer();
     ServerData::ServerContext serverContext(const QJsonObject obj) const;
 
@@ -32,12 +32,14 @@ private:
     void handleLobbyJoin(QTcpSocket* client, const QJsonObject data);
     void handleLobbyLeave(QTcpSocket* client, const QJsonObject data);
 
+    uint getPlayerId(QTcpSocket* client) const;
 
     LobbyController* const m_lobbyController;
+    PlayerController* const m_playerController;
     QTcpServer* const m_tcpServer;
     const QHostAddress m_address = QHostAddress("192.168.1.104");
     const quint16 m_port = 60420;
-    QList<QTcpSocket*> m_clients;
+    QMap<QTcpSocket*, const Player*> m_clients;
 
 
 };

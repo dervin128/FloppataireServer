@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
 
     PlayerController* playerController = new PlayerController();
     LobbyController* lobbyController = new LobbyController(playerController);
-    FloppaServer* server = new FloppaServer(lobbyController);
+    FloppaServer* server = new FloppaServer(lobbyController, playerController);
     Q_UNUSED(server)
 
     return a.exec();

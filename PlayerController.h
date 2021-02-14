@@ -9,6 +9,7 @@ public:
     PlayerController(QObject* parent = nullptr);
 
     const Player* getPlayer(uint id);
+    const Player* createNewPlayer();
 
 signals:
 

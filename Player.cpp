@@ -11,7 +11,7 @@ bool Player::operator==(const Player& player) const{
 }
 
 QJsonObject Player::toJson() const{
-    QJsonObject json{};
+    QJsonObject json;
     json["id"] = (int) m_id;
     return json;
 }
