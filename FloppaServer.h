@@ -31,6 +31,7 @@ private:
     void handleRoomsList(QTcpSocket* client);
     void handleLobbyJoin(QTcpSocket* client, const QJsonObject data);
     void handleLobbyLeave(QTcpSocket* client, const QJsonObject data);
+    void handleLobbyCreateRoom(QTcpSocket* client, const QJsonObject data);
 
     uint getPlayerId(QTcpSocket* client) const;
 

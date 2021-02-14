@@ -17,13 +17,13 @@ LobbyController::LobbyData LobbyController::lobbyData(const QJsonObject obj) con
 }
 
 
-uint LobbyController::createNewRoom(const QString& roomName, uint hostId){
+Room* LobbyController::createNewRoom(const QString& roomName, uint hostId){
     const Player* player = m_playerController->getPlayer(hostId);
     if(player == nullptr) return 0;
     Room* newRoom = new Room(m_idGenerator++, roomName);
     newRoom->addPlayer(player);
     m_rooms[newRoom->getId()] = newRoom;
-    return newRoom->getId();
+    return newRoom;
 }
 
 bool LobbyController::addPlayerToRoom(uint roomId, uint playerId){

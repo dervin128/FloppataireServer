@@ -11,7 +11,8 @@ public:
     enum LobbyRequest {
         ROOMS_LIST,
         JOIN,
-        LEAVE
+        LEAVE,
+        CREATE_ROOM
     };
     Q_ENUM(LobbyRequest);
 
@@ -25,7 +26,7 @@ public:
     LobbyRequest lobbyRequest(const QJsonObject obj) const;
     LobbyData lobbyData(const QJsonObject obj) const;
 
-    uint createNewRoom(const QString& roomName, uint hostId);
+    Room* createNewRoom(const QString& roomName, uint hostId);
     bool addPlayerToRoom(uint roomId, uint playerId);
     bool removePlayerFromRoom(uint roomId, uint playerId);
 

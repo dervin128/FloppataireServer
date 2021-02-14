@@ -80,6 +80,9 @@ void FloppaServer::handleLobbyContext(QTcpSocket* client, const QJsonObject data
     case LobbyController::LEAVE:
         handleLobbyLeave(client, data);
         return;
+    case LobbyController::CREATE_ROOM:
+        handleLobbyCreateRoom();
+        return;
     default:
         qDebug() << "unhandled lobby request";
         return;
@@ -90,8 +93,27 @@ void FloppaServer::handleRoomsList(QTcpSocket* client){
     ServerData data_object;
     data_object.setContext(ServerData::LOBBY);
     data_object.setData(m_lobbyController->getRoomsData());
+
+    qDebug() << m_lobbyController->getRoomsData();
+    qDebug() << data_object.toJson();
+
+
     QByteArray data = data_object.toJson();
     client->write(data);
+}
+
+void FloppaServer::handleLobbyCreateRoom(QTcpSocket* client, const QJsonObject data){
+
+    Room* newRoom = m_lobbyController->createNewRoom(data["room_name"].toString(), m_clients[client]->getId());
+
+    QJsonObject success;
+    success["room"] = newRoom->toJson();
+
+    ServerData data_object;
+    data_object.setContext(ServerData::LOBBY);
+    data_object.setData(success);
+    QByteArray out_data = data_object.toJson();
+    client->write(out_data);
 }
 
 void FloppaServer::handleLobbyJoin(QTcpSocket* client, const QJsonObject data){
