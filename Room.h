@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QMap>
 #include "Player.h"
 #include "SerializableJson.h"
 
